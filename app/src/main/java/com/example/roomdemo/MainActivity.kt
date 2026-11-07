@@ -8,6 +8,16 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.os.Bundle
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -77,11 +87,97 @@ class MainActivity : ComponentActivity() {
         searchResults: List<Product>,
         viewModel: MainViewModel
     ) {
+        var productName by remember { mutableStateOf("") }
+        var productQuantity by remember { mutableStateOf("") }
+        var searching by remember { mutableStateOf(false) }
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = modifier.fillMaxWidth()
+        ) {
+            CustomTextField(
+                title = "Product Name",
+                textState = productName,
+                onTextChange = { productName = it },
+                keyboardType = KeyboardType.Text
+            )
+
+            CustomTextField(
+                title = "Quantity",
+                textState = productQuantity,
+                onTextChange = { productQuantity = it },
+                keyboardType = KeyboardType.Number
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp)
+            ) {
+                Button(onClick = {
+                    val quantity = productQuantity.toIntOrNull()
+                    if (productName.isNotBlank() && quantity != null) {
+                        viewModel.insertProduct(Product(productName, quantity))
+                        searching = false
+                    }
+                }) {
+                    Text("Add")
+                }
+
+                Button(onClick = {
+                    searching = true
+                    viewModel.findProduct(productName)
+                }) {
+                    Text("Search")
+                }
+
+                Button(onClick = {
+                    searching = false
+                    viewModel.deleteProduct(productName)
+                }) {
+                    Text("Delete")
+                }
+
+                Button(onClick = {
+                    searching = false
+                    productName = ""
+                    productQuantity = ""
+                }) {
+                    Text("Clear")
+                }
+            }
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp)
+            ) {
+                val productsToShow = if (searching) searchResults else allProducts
+
+                item {
+                    TitleRow(
+                        head1 = "ID",
+                        head2 = "Product",
+                        head3 = "Quantity"
+                    )
+                }
+
+                items(productsToShow) { product ->
+                    ProductRow(
+                        id = product.id,
+                        name = product.productName,
+                        quantity = product.quantity
+                    )
+                }
+            }
+        }
     }
 
 
 
-@Composable
+
+    @Composable
 fun TitleRow(head1: String, head2: String, head3: String) {
     Row(
         modifier = Modifier
